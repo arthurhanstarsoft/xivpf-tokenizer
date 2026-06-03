@@ -57,6 +57,38 @@ def get_top_duties(conn: sqlite3.Connection, limit: int = 10, content_kind: str 
     return [(row[0], row[1]) for row in rows]
 
 
+def get_active_parties(
+    conn: sqlite3.Connection,
+    duty_name: str,
+    data_center: str | None = None,
+    open_slots: int | None = None,
+    strategy_keyword: str | None = None,
+    limit: int = 10,
+) -> list[sqlite3.Row]:
+    query = """
+        SELECT * FROM listings
+        WHERE is_active=1 AND duty_name_en LIKE ?
+    """
+    params: list = [f"%{duty_name}%"]
+
+    if data_center:
+        query += " AND data_center = ?"
+        params.append(data_center)
+
+    if open_slots is not None:
+        query += " AND slots_open = ?"
+        params.append(open_slots)
+
+    if strategy_keyword:
+        query += " AND LOWER(description_en) LIKE ?"
+        params.append(f"%{strategy_keyword.lower()}%")
+
+    query += " ORDER BY slots_open ASC, last_seen_at DESC LIMIT ?"
+    params.append(limit)
+
+    return conn.execute(query, params).fetchall()
+
+
 def get_active_listing_count(conn: sqlite3.Connection) -> int:
     return conn.execute("SELECT COUNT(*) FROM listings WHERE is_active=1").fetchone()[0]
 

@@ -3,8 +3,8 @@ import sqlite3
 import discord
 from discord.ext import commands
 
-from db.queries import get_top_tokens, get_top_duties, get_active_listing_count, get_last_poll, get_total_listing_count
-from bot.formatter import format_token_bar
+from db.queries import get_top_tokens, get_top_duties, get_active_listing_count, get_last_poll, get_total_listing_count, get_active_parties
+from bot.formatter import format_token_bar, format_listing_row
 from config import resolve_duty
 
 
@@ -89,6 +89,66 @@ class StatsCog(commands.Cog, name="Stats"):
         await ctx.send("\n".join(lines))
 
 
+    @commands.command(name="parties", aliases=["pf"])
+    async def parties(self, ctx: commands.Context, *, args: str = "") -> None:
+        """List active party finder listings for a duty.
+        Usage: !parties <duty> [--slots <n>] [--strat <keyword>] [--dc <DC>]
+        """
+        dc: str = "Aether"
+        duty_name = args
+        open_slots: int | None = None
+        strategy_keyword: str | None = None
+
+        if "--dc" in args:
+            parts = args.split("--dc", 1)
+            duty_name = parts[0]
+            dc = parts[1].strip().split()[0]
+            args = args.replace(f"--dc {dc}", "")
+
+        if "--slots" in args:
+            parts = args.split("--slots", 1)
+            duty_name = parts[0]
+            try:
+                open_slots = int(parts[1].strip().split()[0])
+            except ValueError:
+                pass
+            args = args.replace(f"--slots {open_slots}", "")
+
+        if "--strat" in args:
+            parts = args.split("--strat", 1)
+            duty_name = parts[0]
+            strategy_keyword = parts[1].strip().split()[0]
+
+        duty_name = resolve_duty(duty_name.strip())
+
+        if not duty_name:
+            await ctx.send("Usage: `!parties <duty> [--slots <n>] [--strat <keyword>] [--dc <DC>]`")
+            return
+
+        rows = get_active_parties(
+            self.db, duty_name,
+            data_center=dc,
+            open_slots=open_slots,
+            strategy_keyword=strategy_keyword,
+            limit=10,
+        )
+
+        if not rows:
+            await ctx.send(f"No active listings found for **{duty_name}**.")
+            return
+
+        header_parts = [f"**Active parties for \"{duty_name}\"**"]
+        if dc:
+            header_parts.append(f"DC: {dc}")
+        if open_slots is not None:
+            header_parts.append(f"{open_slots} slot(s) open")
+        if strategy_keyword:
+            header_parts.append(f"strat: {strategy_keyword}")
+
+        await ctx.send(" · ".join(header_parts))
+        for row in rows:
+            await ctx.send(embed=format_listing_row(row))
+
     @commands.command(name="commands")
     async def list_commands(self, ctx: commands.Context) -> None:
         """Show all available commands."""
@@ -106,6 +166,11 @@ class StatsCog(commands.Cog, name="Stats"):
             "`!watch <duty> --strat <keyword> --dc <DC>` — add DC filter",
             "`!unwatch <id>` — remove a watch by its ID",
             "`!watches` — list active watches for this server",
+            "─" * 36,
+            "`!parties <duty>` — list active PF listings for a duty",
+            "`!parties <duty> --slots <n>` — only show listings with n open slots",
+            "`!parties <duty> --strat <keyword>` — filter by strategy keyword",
+            "`!parties <duty> --dc <DC>` — filter by data center",
         ]
         await ctx.send("\n".join(lines))
 

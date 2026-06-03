@@ -21,10 +21,9 @@ def _slots_display(slots_filled: list) -> str:
     parts = []
     for slot in slots_filled:
         if slot is None:
-            parts.append("⬜")
+            parts.append("`----`")
         else:
-            icon = JOB_ICONS.get(slot, "✅")
-            parts.append(f"{icon}`{slot}`")
+            parts.append(f"`{slot}`")
     return " ".join(parts)
 
 
