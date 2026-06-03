@@ -7,7 +7,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from db.database import init_db, process_poll
+from db.database import init_db, process_poll, backfill_duty_overrides
 from db.queries import get_watches, get_matching_new_listings, record_notified
 from scraper.client import XivpfClient
 from scraper.parser import parse_listing
@@ -28,6 +28,9 @@ POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "60"))
 DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 
 db = init_db(DB_PATH)
+_backfilled = backfill_duty_overrides(db)
+if _backfilled:
+    log.info("Backfilled %d listings with duty name overrides", _backfilled)
 xivpf = XivpfClient()
 
 intents = discord.Intents.default()

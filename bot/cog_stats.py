@@ -5,6 +5,7 @@ from discord.ext import commands
 
 from db.queries import get_top_tokens, get_top_duties, get_active_listing_count, get_last_poll, get_total_listing_count
 from bot.formatter import format_token_bar
+from config import resolve_duty
 
 
 class StatsCog(commands.Cog, name="Stats"):
@@ -17,7 +18,7 @@ class StatsCog(commands.Cog, name="Stats"):
         """Show top discovered tokens for a duty.
         Usage: !strategies <duty name> [--dc <datacenter>]
         """
-        dc: str | None = None
+        dc: str = "Aether"
         duty_name = args
 
         if "--dc" in args:
@@ -29,7 +30,8 @@ class StatsCog(commands.Cog, name="Stats"):
             await ctx.send("Usage: `!strategies <duty name> [--dc <datacenter>]`")
             return
 
-        tokens = get_top_tokens(self.db, duty_name, limit=15, data_center=dc)
+        duty_name = resolve_duty(duty_name)
+        tokens = get_top_tokens(self.db, duty_name, limit=20, data_center=dc)
 
         if not tokens:
             await ctx.send(f"No token data found for **{duty_name}**. Try collecting data for a few minutes first.")
@@ -84,6 +86,27 @@ class StatsCog(commands.Cog, name="Stats"):
                 f"{last_poll['tokens_added']} tokens added"
             )
 
+        await ctx.send("\n".join(lines))
+
+
+    @commands.command(name="commands")
+    async def list_commands(self, ctx: commands.Context) -> None:
+        """Show all available commands."""
+        lines = [
+            "**XIVPF Scraper Commands**",
+            "─" * 36,
+            "`!strategies <duty>` — top strategy tokens for a duty",
+            "`!strategies <duty> --dc <DC>` — same, filtered by data center",
+            "`!top` — most active duties by listing count",
+            "`!top --kind <Raids|Trials|Dungeons>` — filter by content type",
+            "`!status` — last poll time, active listings, DB stats",
+            "─" * 36,
+            "`!watch <duty>` — post to this channel when a matching listing appears",
+            "`!watch <duty> --strat <keyword>` — only post listings mentioning keyword",
+            "`!watch <duty> --strat <keyword> --dc <DC>` — add DC filter",
+            "`!unwatch <id>` — remove a watch by its ID",
+            "`!watches` — list active watches for this server",
+        ]
         await ctx.send("\n".join(lines))
 
 

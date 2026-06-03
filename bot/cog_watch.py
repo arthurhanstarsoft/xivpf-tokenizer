@@ -5,6 +5,7 @@ import discord
 from discord.ext import commands
 
 from db.queries import get_watches, create_watch, deactivate_watch
+from config import resolve_duty
 
 
 class WatchCog(commands.Cog, name="Watch"):
@@ -46,7 +47,7 @@ class WatchCog(commands.Cog, name="Watch"):
             else:
                 strategy_keyword = rest.split()[0]
 
-        duty_name = duty_name.strip()
+        duty_name = resolve_duty(duty_name.strip())
 
         now = datetime.now(timezone.utc).isoformat()
         watch_id = create_watch(

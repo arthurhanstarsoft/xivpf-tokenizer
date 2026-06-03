@@ -132,6 +132,55 @@ def index_listing_tokens(conn: sqlite3.Connection, listing: Listing, now: str) -
     return len(tokens)
 
 
+def backfill_duty_overrides(conn: sqlite3.Connection) -> int:
+    """Re-label and re-tokenize existing DB listings that had duty_name_en=NULL.
+    Returns number of listings updated."""
+    from scraper.parser import _apply_override
+
+    rows = conn.execute(
+        "SELECT id, category, min_item_level, description_en FROM listings WHERE duty_name_en IS NULL"
+    ).fetchall()
+
+    updated = 0
+    now = _now_utc()
+    for row in rows:
+        name = _apply_override(row["category"], row["min_item_level"] or 0, row["description_en"] or "")
+        if name:
+            conn.execute("UPDATE listings SET duty_name_en=?, tokens_indexed=0 WHERE id=?", (name, row["id"]))
+            updated += 1
+
+    # Now tokenize any listing that has a duty name but hasn't been indexed yet
+    unindexed = conn.execute(
+        "SELECT id, duty_name_en, description_en FROM listings WHERE tokens_indexed=0 AND duty_name_en IS NOT NULL"
+    ).fetchall()
+
+    from scraper.parser import Listing as _Listing
+    from dataclasses import fields as _fields
+    from analysis.tokenizer import tokenize
+
+    for row in unindexed:
+        tokens = tokenize(row["description_en"] or "")
+        for token in tokens:
+            conn.execute(
+                """
+                INSERT INTO duty_tokens (duty_name_en, token, count, first_seen_at, last_seen_at)
+                VALUES (?, ?, 1, ?, ?)
+                ON CONFLICT(duty_name_en, token) DO UPDATE SET
+                    count = count + 1,
+                    last_seen_at = excluded.last_seen_at
+                """,
+                (row["duty_name_en"], token, now, now),
+            )
+            conn.execute(
+                "INSERT OR IGNORE INTO listing_tokens (listing_id, token) VALUES (?, ?)",
+                (row["id"], token),
+            )
+        conn.execute("UPDATE listings SET tokens_indexed=1 WHERE id=?", (row["id"],))
+
+    conn.commit()
+    return updated
+
+
 def mark_expired(conn: sqlite3.Connection, active_ids: set[int]) -> int:
     if not active_ids:
         conn.execute("UPDATE listings SET is_active=0 WHERE is_active=1")

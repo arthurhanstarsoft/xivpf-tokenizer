@@ -2,6 +2,29 @@ import json
 from dataclasses import dataclass, field
 
 from .worlds import WORLD_TO_DC
+from config import DUTY_OVERRIDES, DUTY_NAME_NORMALIZATIONS
+
+
+def _normalize_duty_name(name: str) -> str:
+    lower = name.lower()
+    for key, canonical in DUTY_NAME_NORMALIZATIONS.items():
+        if key in lower:
+            return canonical
+    return name
+
+
+def _apply_override(category: str | None, min_item_level: int, description_en: str) -> str | None:
+    for override in DUTY_OVERRIDES:
+        if override.get("category") and override["category"] != category:
+            continue
+        if "min_item_level_gte" in override and min_item_level < override["min_item_level_gte"]:
+            continue
+        if "description_contains" in override:
+            desc_lower = description_en.lower()
+            if not any(kw in desc_lower for kw in override["description_contains"]):
+                continue
+        return override["name"]
+    return None
 
 
 @dataclass
@@ -39,7 +62,13 @@ def parse_listing(raw: dict) -> Listing:
         duty_info = lst["duty_info"]
         names = duty_info.get("name") or {}
         duty_name_en = names.get("en") or names.get("ja") or names.get("de") or names.get("fr")
+        if duty_name_en:
+            duty_name_en = _normalize_duty_name(duty_name_en)
         content_kind = duty_info.get("content_kind")
+
+    desc_for_override = (lst.get("description") or {}).get("en", "") or ""
+    if duty_name_en is None:
+        duty_name_en = _apply_override(category, lst.get("min_item_level") or 0, desc_for_override)
 
     current_world = lst["current_world"]["name"]
     home_world = lst["home_world"]["name"]

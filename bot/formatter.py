@@ -78,6 +78,7 @@ def format_listing_row(row: sqlite3.Row) -> discord.Embed:
 
 
 def format_token_bar(token: str, count: int, max_count: int, rank: int) -> str:
-    bar_len = max(1, round(count / max_count * 12))
-    bar = "█" * bar_len
-    return f"`{rank:>2}.` **{token}** {bar} {count}"
+    pct = count / max_count
+    filled = round(pct * 10)
+    bar = "▰" * filled + "▱" * (10 - filled)
+    return f"`{rank:>2}.` {bar} **{token}** ({count})"
