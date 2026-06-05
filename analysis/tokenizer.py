@@ -27,11 +27,16 @@ _STOP_WORDS: set[str] = set(stopwords.words("english")) | {
     "raid", "boss",
     "p1", "p2", "p3", "p4",
     "also", "etc",
+    # Run descriptors — not strategy signals
+    "fresh", "enrage",
     # Noise from partial tokenization of known service names
     "kefka", "bin",
 }
 
 _MIN_TOKEN_LEN = 3
+
+# Matches any CJK character (Chinese, Japanese, Korean)
+_CJK_RE = re.compile(r"[぀-ヿ㐀-䶿一-鿿豈-﫿ｦ-ﾟ]")
 
 _URL_SERVICE_NAMES: dict[str, str] = {
     "raidplan.io": "raidplan",
@@ -95,7 +100,10 @@ def tokenize(description: str) -> list[str]:
     words = word_tokenize(normalized)
     filtered = [
         w for w in words
-        if len(w) >= _MIN_TOKEN_LEN and w not in _STOP_WORDS and not w.isdigit()
+        if len(w) >= _MIN_TOKEN_LEN
+        and w not in _STOP_WORDS
+        and not w.isdigit()
+        and not _CJK_RE.search(w)
     ]
 
     tokens = list(filtered)

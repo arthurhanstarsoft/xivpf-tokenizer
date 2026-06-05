@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS listings (
     first_seen_at       TEXT NOT NULL,
     last_seen_at        TEXT NOT NULL,
     is_active           INTEGER DEFAULT 1,
-    tokens_indexed      INTEGER DEFAULT 0
+    tokens_indexed      INTEGER DEFAULT 0,
+    description_raw     TEXT
 )
 """
 

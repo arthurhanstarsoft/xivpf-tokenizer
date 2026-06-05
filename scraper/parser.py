@@ -35,6 +35,7 @@ class Listing:
     current_world: str
     data_center: str | None
     description_en: str
+    description_raw: str
     duty_name_en: str | None
     category: str | None
     content_kind: str | None
@@ -79,6 +80,7 @@ def parse_listing(raw: dict) -> Listing:
 
     desc = lst.get("description") or {}
     description_en = desc.get("en") or desc.get("ja") or desc.get("de") or desc.get("fr") or ""
+    description_raw = json.dumps(desc, ensure_ascii=False)
 
     obj = lst.get("objective") or {}
     cond = lst.get("conditions") or {}
@@ -126,5 +128,6 @@ def parse_listing(raw: dict) -> Listing:
         one_player_per_job=one_player_per_job,
         created_at=raw.get("created_at") or lst.get("created_at") or "",
         updated_at=raw.get("updated_at") or lst.get("updated_at") or "",
+        description_raw=description_raw,
         tags=tags,
     )

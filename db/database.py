@@ -27,6 +27,13 @@ def init_db(db_path: str) -> sqlite3.Connection:
         POLLS_TABLE, WATCHES_TABLE, NOTIFIED_TABLE,
     ):
         conn.execute(stmt)
+    # Migrations — safe to run on existing DBs
+    try:
+        conn.execute("ALTER TABLE listings ADD COLUMN description_raw TEXT")
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
     conn.commit()
     return conn
 
@@ -52,16 +59,16 @@ def upsert_listing(conn: sqlite3.Connection, listing: Listing, now: str) -> str:
             """
             INSERT INTO listings (
                 id, duty_name_en, category, content_kind, recruiter,
-                home_world, current_world, data_center, description_en,
+                home_world, current_world, data_center, description_en, description_raw,
                 min_item_level, slot_count, slots_filled_json, slots_open,
                 obj_duty_completion, obj_practice, obj_loot,
                 cond_duty_complete, one_player_per_job,
                 created_at, updated_at, first_seen_at, last_seen_at, is_active, tokens_indexed
-            ) VALUES (?,?,?,?,?, ?,?,?,?, ?,?,?,?, ?,?,?, ?,?, ?,?,?,?,1,0)
+            ) VALUES (?,?,?,?,?, ?,?,?,?,?, ?,?,?,?, ?,?,?, ?,?, ?,?,?,?,1,0)
             """,
             (
                 listing.id, listing.duty_name_en, listing.category, listing.content_kind, listing.recruiter,
-                listing.home_world, listing.current_world, listing.data_center, listing.description_en,
+                listing.home_world, listing.current_world, listing.data_center, listing.description_en, listing.description_raw,
                 listing.min_item_level, listing.slot_count,
                 json.dumps(listing.slots_filled), listing.slots_open,
                 int(listing.obj_duty_completion), int(listing.obj_practice), int(listing.obj_loot),
@@ -76,7 +83,7 @@ def upsert_listing(conn: sqlite3.Connection, listing: Listing, now: str) -> str:
             """
             UPDATE listings SET
                 duty_name_en=?, category=?, content_kind=?, recruiter=?,
-                home_world=?, current_world=?, data_center=?, description_en=?,
+                home_world=?, current_world=?, data_center=?, description_en=?, description_raw=?,
                 min_item_level=?, slot_count=?, slots_filled_json=?, slots_open=?,
                 obj_duty_completion=?, obj_practice=?, obj_loot=?,
                 cond_duty_complete=?, one_player_per_job=?,
@@ -85,7 +92,7 @@ def upsert_listing(conn: sqlite3.Connection, listing: Listing, now: str) -> str:
             """,
             (
                 listing.duty_name_en, listing.category, listing.content_kind, listing.recruiter,
-                listing.home_world, listing.current_world, listing.data_center, listing.description_en,
+                listing.home_world, listing.current_world, listing.data_center, listing.description_en, listing.description_raw,
                 listing.min_item_level, listing.slot_count,
                 json.dumps(listing.slots_filled), listing.slots_open,
                 int(listing.obj_duty_completion), int(listing.obj_practice), int(listing.obj_loot),
