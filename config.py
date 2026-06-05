@@ -18,15 +18,15 @@ DUTY_OVERRIDES: list[dict] = [
         # When a new Savage/Ultimate releases with duty_info=null, add a new entry
         # ABOVE this one with its own keywords so it takes priority.
         "description_contains": [
-            # Mechanics
+            # DMU-exclusive mechanics
             "arrows", "arrow", "graven", "forsaken", "merry", "telepo", "テレポ",
-            # Strategy guide names
-            "toxic", "xolo", "kff", "hector", "game8", "ぬけまる", "nukemaru",
-            "yarn", "ヤーン", "x13", "raidplan", "kefkabin", "pastebin",
-            # Phase markers (strong signal for multi-phase ultimates)
+            # DMU-exclusive strategy names/guides
+            "toxic", "xolo", "kff", "ぬけまる", "nukemaru",
+            "yarn", "ヤーン", "x13", "kefkabin",
+            # Phase markers
             "p1", "p2", "p3", "p4",
-            # Farming/clear language common to this tier
-            "cw", "wings", "weapon farm", "羽",
+            # JP farming language specific to this tier
+            "weapon farm", "羽",
         ],
     },
 ]

@@ -149,6 +149,54 @@ class StatsCog(commands.Cog, name="Stats"):
         for row in rows:
             await ctx.send(embed=format_listing_row(row))
 
+    @commands.command(name="dump")
+    async def dump(self, ctx: commands.Context, *, args: str = "") -> None:
+        """Export all descriptions for a duty to a .txt file.
+        Usage: !dump <duty> [--dc <DC>]
+        """
+        dc: str = "Aether"
+        duty_name = args
+
+        if "--dc" in args:
+            parts = args.split("--dc", 1)
+            duty_name = parts[0].strip()
+            dc = parts[1].strip().split()[0]
+
+        duty_name = resolve_duty(duty_name.strip())
+
+        if not duty_name:
+            await ctx.send("Usage: `!dump <duty> [--dc <DC>]`")
+            return
+
+        query = "SELECT recruiter, current_world, description_en, created_at FROM listings WHERE duty_name_en LIKE ?"
+        params = [f"%{duty_name}%"]
+        if dc:
+            query += " AND data_center = ?"
+            params.append(dc)
+        query += " ORDER BY created_at DESC"
+
+        rows = self.db.execute(query, params).fetchall()
+
+        if not rows:
+            await ctx.send(f"No descriptions found for **{duty_name}**.")
+            return
+
+        lines = [f"Descriptions for: {duty_name}" + (f" (DC: {dc})" if dc else "")]
+        lines.append(f"Total: {len(rows)}")
+        lines.append("=" * 60)
+        for row in rows:
+            lines.append(f"[{row['created_at'][:16].replace('T', ' ')} UTC] {row['recruiter']} @ {row['current_world']}")
+            lines.append(row['description_en'] or "(no description)")
+            lines.append("-" * 40)
+
+        content = "\n".join(lines).encode("utf-8")
+        filename = f"{duty_name.replace(' ', '_').replace('(', '').replace(')', '')}_{dc}.txt"
+
+        await ctx.send(
+            f"**{len(rows)}** descriptions for **{duty_name}**",
+            file=discord.File(fp=__import__('io').BytesIO(content), filename=filename),
+        )
+
     @commands.command(name="commands")
     async def list_commands(self, ctx: commands.Context) -> None:
         """Show all available commands."""
