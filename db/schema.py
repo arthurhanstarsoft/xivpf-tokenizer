@@ -76,6 +76,9 @@ CREATE TABLE IF NOT EXISTS watches (
     duty_name        TEXT NOT NULL,
     strategy_keyword TEXT,
     data_center      TEXT,
+    require_loot     INTEGER DEFAULT 0,
+    require_practice INTEGER DEFAULT 0,
+    require_clear    INTEGER DEFAULT 0,
     created_by       TEXT NOT NULL,
     created_at       TEXT NOT NULL,
     is_active        INTEGER DEFAULT 1

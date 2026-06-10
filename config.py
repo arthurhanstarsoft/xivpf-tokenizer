@@ -66,6 +66,9 @@ DUTY_ALIASES: dict[str, str] = {
     "wld":          "Worqor Lar Dor (Extreme)",
     "recollection": "Recollection (Extreme)",
     "hon":          "Hell on Rails (Extreme)",
+    # Alliance raids
+    "cod":          "The Cloud of Darkness (Chaotic)",
+    "cloud":        "The Cloud of Darkness (Chaotic)",
 }
 
 

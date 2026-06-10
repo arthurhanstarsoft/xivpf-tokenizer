@@ -16,15 +16,21 @@ class WatchCog(commands.Cog, name="Watch"):
     @commands.command(name="watch")
     async def watch(self, ctx: commands.Context, *, args: str = "") -> None:
         """Subscribe this channel to matching party finder listings.
-        Usage: !watch <duty name> [--strat <keyword>] [--dc <datacenter>]
-        Example: !watch "AAC Heavyweight M4" --strat nukemaru --dc Aether
+        Usage: !watch <duty> [--strat <kw>] [--dc <DC>] [--loot] [--practice] [--clear]
+        Example: !watch cod --loot --dc Aether
         """
         if not args:
             await ctx.send(
-                "Usage: `!watch <duty name> [--strat <keyword>] [--dc <datacenter>]`\n"
-                "Example: `!watch AAC Heavyweight M4 --strat nukemaru --dc Aether`"
+                "Usage: `!watch <duty> [--strat <keyword>] [--dc <datacenter>] [--loot] [--practice] [--clear]`\n"
+                "Example: `!watch cod --loot --dc Aether`"
             )
             return
+
+        # Extract boolean flags first
+        require_loot = "--loot" in args
+        require_practice = "--practice" in args
+        require_clear = "--clear" in args
+        args = args.replace("--loot", "").replace("--practice", "").replace("--clear", "").strip()
 
         duty_name = args
         strategy_keyword: str | None = None
@@ -34,7 +40,6 @@ class WatchCog(commands.Cog, name="Watch"):
             parts = args.split("--dc", 1)
             duty_name = parts[0]
             data_center = parts[1].strip().split()[0]
-            duty_name = duty_name.replace("--strat", "\0").split("\0")[0] if "--strat" not in duty_name else duty_name
 
         if "--strat" in args:
             parts = args.split("--strat", 1)
@@ -59,6 +64,9 @@ class WatchCog(commands.Cog, name="Watch"):
             data_center=data_center,
             created_by=str(ctx.author),
             created_at=now,
+            require_loot=require_loot,
+            require_practice=require_practice,
+            require_clear=require_clear,
         )
 
         parts = [f"Watch **#{watch_id}** created for **{duty_name}**"]
@@ -66,6 +74,15 @@ class WatchCog(commands.Cog, name="Watch"):
             parts.append(f"keyword: `{strategy_keyword}`")
         if data_center:
             parts.append(f"DC: `{data_center}`")
+        tag_flags = []
+        if require_loot:
+            tag_flags.append("loot")
+        if require_practice:
+            tag_flags.append("practice")
+        if require_clear:
+            tag_flags.append("clear")
+        if tag_flags:
+            parts.append("tags: " + ", ".join(tag_flags))
         await ctx.send(" · ".join(parts))
 
     @commands.command(name="unwatch")
@@ -95,6 +112,15 @@ class WatchCog(commands.Cog, name="Watch"):
                 parts.append(f"keyword: `{row['strategy_keyword']}`")
             if row["data_center"]:
                 parts.append(f"DC: `{row['data_center']}`")
+            tag_flags = []
+            if row["require_loot"]:
+                tag_flags.append("loot")
+            if row["require_practice"]:
+                tag_flags.append("practice")
+            if row["require_clear"]:
+                tag_flags.append("clear")
+            if tag_flags:
+                parts.append("tags: " + ", ".join(tag_flags))
             ch = self.bot.get_channel(int(row["channel_id"]))
             ch_display = ch.mention if ch else f"#channel-{row['channel_id']}"
             parts.append(f"→ {ch_display}")

@@ -11,7 +11,7 @@ from db.database import init_db, process_poll, backfill_duty_overrides
 from db.queries import get_watches, get_matching_new_listings, record_notified
 from scraper.client import XivpfClient
 from scraper.parser import parse_listing
-from bot.formatter import format_listing_row
+from bot.formatter import format_listing_row, format_loot_alert
 import bot.cog_stats as cog_stats
 import bot.cog_watch as cog_watch
 
@@ -50,6 +50,9 @@ async def send_watch_notifications() -> None:
             duty_name=watch["duty_name"],
             strategy_keyword=watch["strategy_keyword"],
             data_center=watch["data_center"],
+            require_loot=bool(watch["require_loot"]),
+            require_practice=bool(watch["require_practice"]),
+            require_clear=bool(watch["require_clear"]),
         )
         if not matches:
             continue
@@ -58,10 +61,16 @@ async def send_watch_notifications() -> None:
         if not channel:
             continue
 
+        is_loot_watch = bool(watch["require_loot"])
+
         for row in matches:
             try:
-                embed = format_listing_row(row)
-                await channel.send(embed=embed)
+                if is_loot_watch:
+                    embed = format_loot_alert(row)
+                    await channel.send(content="Loot run posted!", embed=embed)
+                else:
+                    embed = format_listing_row(row)
+                    await channel.send(embed=embed)
                 record_notified(db, watch["id"], row["id"], now)
             except Exception as e:
                 log.warning("Failed to notify listing %s: %s", row["id"], e)

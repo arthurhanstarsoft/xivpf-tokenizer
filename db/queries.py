@@ -115,6 +115,9 @@ def get_matching_new_listings(
     duty_name: str,
     strategy_keyword: str | None,
     data_center: str | None,
+    require_loot: bool = False,
+    require_practice: bool = False,
+    require_clear: bool = False,
 ) -> list[sqlite3.Row]:
     query = """
         SELECT l.* FROM listings l
@@ -131,6 +134,13 @@ def get_matching_new_listings(
     if data_center:
         query += " AND l.data_center = ?"
         params.append(data_center)
+
+    if require_loot:
+        query += " AND l.obj_loot = 1"
+    if require_practice:
+        query += " AND l.obj_practice = 1"
+    if require_clear:
+        query += " AND l.obj_duty_completion = 1"
 
     return conn.execute(query, params).fetchall()
 
@@ -152,13 +162,18 @@ def create_watch(
     data_center: str | None,
     created_by: str,
     created_at: str,
+    require_loot: bool = False,
+    require_practice: bool = False,
+    require_clear: bool = False,
 ) -> int:
     cur = conn.execute(
         """
-        INSERT INTO watches (guild_id, channel_id, duty_name, strategy_keyword, data_center, created_by, created_at)
-        VALUES (?,?,?,?,?,?,?)
+        INSERT INTO watches (guild_id, channel_id, duty_name, strategy_keyword, data_center,
+                             require_loot, require_practice, require_clear, created_by, created_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
         """,
-        (guild_id, channel_id, duty_name, strategy_keyword, data_center, created_by, created_at),
+        (guild_id, channel_id, duty_name, strategy_keyword, data_center,
+         int(require_loot), int(require_practice), int(require_clear), created_by, created_at),
     )
     conn.commit()
     return cur.lastrowid

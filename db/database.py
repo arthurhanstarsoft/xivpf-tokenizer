@@ -28,11 +28,17 @@ def init_db(db_path: str) -> sqlite3.Connection:
     ):
         conn.execute(stmt)
     # Migrations — safe to run on existing DBs
-    try:
-        conn.execute("ALTER TABLE listings ADD COLUMN description_raw TEXT")
-        conn.commit()
-    except Exception:
-        pass  # Column already exists
+    for migration in [
+        "ALTER TABLE listings ADD COLUMN description_raw TEXT",
+        "ALTER TABLE watches ADD COLUMN require_loot INTEGER DEFAULT 0",
+        "ALTER TABLE watches ADD COLUMN require_practice INTEGER DEFAULT 0",
+        "ALTER TABLE watches ADD COLUMN require_clear INTEGER DEFAULT 0",
+    ]:
+        try:
+            conn.execute(migration)
+            conn.commit()
+        except Exception:
+            pass
 
     conn.commit()
     return conn
