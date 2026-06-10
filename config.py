@@ -10,26 +10,8 @@ DUTY_NAME_NORMALIZATIONS: dict[str, str] = {
 # Overrides for duties that xivpf's API doesn't recognize yet (duty_info: null).
 # Matched top-to-bottom; first match wins.
 # Add entries here whenever a new fight releases before xivpf updates their database.
-DUTY_OVERRIDES: list[dict] = [
-    {
-        "name": "Dancing Mad (Ultimate)",
-        "category": "HighEndDuty",
-        # Matched if ANY of these keywords appear in the description (case-insensitive).
-        # When a new Savage/Ultimate releases with duty_info=null, add a new entry
-        # ABOVE this one with its own keywords so it takes priority.
-        "description_contains": [
-            # DMU-exclusive mechanics
-            "arrows", "arrow", "graven", "forsaken", "merry", "telepo", "テレポ",
-            # DMU-exclusive strategy names/guides
-            "toxic", "xolo", "kff", "ぬけまる", "nukemaru",
-            "yarn", "ヤーン", "x13", "kefkabin",
-            # Phase markers
-            "p1", "p2", "p3", "p4",
-            # JP farming language specific to this tier
-            "weapon farm", "羽",
-        ],
-    },
-]
+# Dancing Mad (Ultimate) was here but was removed — xivpf API now returns it directly.
+DUTY_OVERRIDES: list[dict] = []
 
 # Aliases for bot commands — maps any alias to the exact duty_name_en stored in the DB.
 # Case-insensitive. Add your own shortcuts here.
